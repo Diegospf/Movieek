@@ -14,13 +14,13 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   late TextEditingController _controller;
-  List<dynamic> _searchResults = [];
+  late Future<List<dynamic>> _futureSearchResults;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.query);
-    _searchMovies(widget.query);
+    _futureSearchResults = _searchMovies(widget.query);
   }
 
   @override
@@ -29,17 +29,13 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
-  Future<void> _searchMovies(String query) async {
+  Future<List<dynamic>> _searchMovies(String query) async {
     try {
-      final List<dynamic> results =
-          await MovieService().fetchSearchMovies(query);
-      setState(() {
-        _searchResults = results;
-      });
-      _controller.text = query;
+      return await MovieService().fetchSearchMovies(query);
     } catch (e) {
       // ignore: avoid_print
       print('Erro ao buscar filmes: $e');
+      return [];
     }
   }
 
@@ -77,7 +73,9 @@ class _SearchPageState extends State<SearchPage> {
                         contentPadding: EdgeInsets.zero,
                       ),
                       onSubmitted: (value) {
-                        _searchMovies(value);
+                        setState(() {
+                          _futureSearchResults = _searchMovies(value);
+                        });
                       },
                     ),
                   ),
@@ -87,13 +85,42 @@ class _SearchPageState extends State<SearchPage> {
             IconButton(
               icon: const Icon(Icons.search, color: Colors.white),
               onPressed: () {
-                _searchMovies(_controller.text);
+                setState(() {
+                  _futureSearchResults = _searchMovies(_controller.text);
+                });
               },
             ),
           ],
         ),
       ),
-      body: MovieListView(searchResults: _searchResults),
+      body: FutureBuilder<List<dynamic>>(
+        future: _futureSearchResults,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: const TextStyle(color: Colors.white),
+              ),
+            );
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Text(
+                'No results found',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          } else {
+            return MovieListView(searchResults: snapshot.data!);
+          }
+        },
+      ),
     );
   }
 }
