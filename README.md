@@ -22,6 +22,11 @@ Movieek é um projeto desenvolvido em Flutter que visa criar uma rede para avali
 
 - [Diego Pires](https://github.com/Diegospf)
 
+## Images
+
+- [Banner](https://github.com/Diegospf/Movieek/blob/master/assets/banner.jpeg)
+- [Logo](https://github.com/Diegospf/Movieek/blob/master/assets/logo.png)
+
 # flutter_movieek
 
 A new Flutter project.
